@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
+#include "Metricas.h"
 
 const double MU = 1.35;
 const double ALPHA = 0.6;
@@ -36,6 +37,7 @@ void Partido::seleccionarConvocados(Equipo* equipo, Convocado* destino) {
         indices[j] = temp;
     }
     for (int i = 0; i < 11; ++i) {
+        incIter(1);
         destino[i].jugador = &(equipo->getJugador(indices[i]));
         destino[i].stats.goles = 0;
         destino[i].stats.tarjetasAmarillas = 0;
@@ -160,6 +162,7 @@ void Partido::simular(bool esEliminatoria) {
     int minutosPartido = 90;
 
     for (int i = 0; i < 11; ++i) {
+        incIter(1);
         simularEventosJugador(convocadosEq1[i], golesRestantes1, minutosPartido);
         simularEventosJugador(convocadosEq2[i], golesRestantes2, minutosPartido);
     }
@@ -169,6 +172,7 @@ void Partido::simular(bool esEliminatoria) {
     // RAZÓN: garantiza que los golesEsperados siempre se cumplan completamente
     while (golesRestantes1 > 0) {
         for (int i = 0; i < 11 && golesRestantes1 > 0; ++i) {
+            incIter(1);
             if (ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
                 convocadosEq1[i].stats.goles++;
                 golesRestantes1--;
@@ -177,6 +181,7 @@ void Partido::simular(bool esEliminatoria) {
     }
     while (golesRestantes2 > 0) {
         for (int i = 0; i < 11 && golesRestantes2 > 0; ++i) {
+            incIter(1);
             if (ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
                 convocadosEq2[i].stats.goles++;
                 golesRestantes2--;
@@ -233,6 +238,7 @@ void Partido::actualizarHistoricos() {
     equipo1->actualizarEstadisticas(golesEq1, golesEq2, amarillasEq1, rojasEq1, faltasEq1, ganado1, empatado, !ganado1 && !empatado);
     equipo2->actualizarEstadisticas(golesEq2, golesEq1, amarillasEq2, rojasEq2, faltasEq2, ganado2, empatado, !ganado2 && !empatado);
     for (int i = 0; i < 11; ++i) {
+        incIter(1);
         convocadosEq1[i].jugador->acumularEstadisticasPartido(convocadosEq1[i].stats.goles,
                                                               convocadosEq1[i].stats.tarjetasAmarillas,
                                                               convocadosEq1[i].stats.tarjetasRojas,

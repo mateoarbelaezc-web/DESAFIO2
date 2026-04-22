@@ -75,7 +75,8 @@ public:
     static long long totalIteraciones;
     static void incIteraciones(long long n = 1);
     static size_t calcularMemoriaActual();
-    void mostrarMetricas(const std::string& etapa);
+    void mostrarMetricas(const std::string& etapa, size_t bytesLocales = 0,
+                         const std::string& componentesExternos = "");
 };
 
 #endif

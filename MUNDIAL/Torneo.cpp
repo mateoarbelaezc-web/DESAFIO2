@@ -2,7 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
+#include "partido.h"
+#include "Metricas.h"
+
 
 // Extrae el siguiente campo delimitado por ';' desde pos en linea
 // Avanza pos al inicio del siguiente campo
@@ -16,11 +18,12 @@ static std::string extraerCampo(const std::string& linea, int& pos) {
     if (pos < n && linea[pos] == ';') pos++; // saltar el ';'
     return campo;
 }
-// AGREGAR al inicio de Torneo.cpp, antes del constructor
-// RAZÓN: sumarDias se necesita en simularFaseGrupos para calcular fechas
+
 static std::string sumarDias(const std::string& fecha, int dias) {
-    int dia, mes, anio;
-    sscanf(fecha.c_str(), "%d/%d/%d", &dia, &mes, &anio);
+    // fecha formato "DD/MM/YYYY"
+    int dia  = parsearInt(fecha, 0, 2);
+    int mes  = parsearInt(fecha, 3, 5);
+    int anio = parsearInt(fecha, 6, 10);
     int diasPorMes[] = {31,28,31,30,31,30,31,31,30,31,30,31};
     dia += dias;
     while (dia > diasPorMes[mes-1]) {
@@ -28,9 +31,7 @@ static std::string sumarDias(const std::string& fecha, int dias) {
         mes++;
         if (mes > 12) { mes = 1; anio++; }
     }
-    char buffer[11];
-    sprintf(buffer, "%02d/%02d/%04d", dia, mes, anio);
-    return std::string(buffer);
+    return intAString(dia, 2) + "/" + intAString(mes, 2) + "/" + intAString(anio, 4);
 }
 // ----------------------------------------------------------------------
 // Constructor y destructor
@@ -97,12 +98,14 @@ Torneo& Torneo::operator=(const Torneo& otro) {
 // ----------------------------------------------------------------------
 void Torneo::ordenarEquiposPorRanking(Equipo* lista[], int n) {
     for (int i = 0; i < n-1; ++i)
-        for (int j = 0; j < n-i-1; ++j)
+        for (int j = 0; j < n-i-1; ++j) {
+            incIteraciones(1);
             if (lista[j]->getRanking() > lista[j+1]->getRanking()) {
                 Equipo* temp = lista[j];
                 lista[j] = lista[j+1];
                 lista[j+1] = temp;
             }
+        }
 }
 
 // ----------------------------------------------------------------------
@@ -113,6 +116,7 @@ void Torneo::distribuirBombos() {
     Equipo* otros[NUM_EQUIPOS];
     int otrosCount = 0;
     for (int i = 0; i < numEquipos; ++i) {
+        incIteraciones(1);
         if (equipos[i].getPais() == "United States")
             anfitrion = &equipos[i];
         else
@@ -144,6 +148,7 @@ bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo) {
     std::string conf = equipo->getConfederacion();
     int countConf = 0;
     for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
+        incIteraciones(1);
         Equipo* eq = grupo->getEquipo(i);
         if (!eq) continue;
         if (eq->getConfederacion() == conf) {
@@ -167,6 +172,7 @@ void Torneo::sortearGrupos() {
 
     while (!sorteoValido && intentos < 100000) {
         intentos++;
+        incIteraciones(1);
 
         // Limpiar grupos
         for (int g = 0; g < NUM_GRUPOS; ++g)
@@ -229,6 +235,9 @@ void Torneo::sortearGrupos() {
         std::cout << "Sorteo valido encontrado en " << intentos
                   << " intento(s)\n";
         imprimirGrupos();
+        mostrarMetricas("Sorteo de grupos",
+                        sizeof(int)*NUM_GRUPOS + sizeof(Equipo*)*NUM_EQUIPOS,
+                        "rand() de <cstdlib>");      // otros[]
     }
 }
 void Torneo::imprimirGrupos() {
@@ -257,19 +266,20 @@ void Torneo::cargarEquipos(const std::string& archivo) {
     std::getline(file, linea);
     int idx = 0;
     while (std::getline(file, linea) && idx < NUM_EQUIPOS) {
+        incIteraciones(1);
         int ranking, gf, gc, pg, pe, pp;
         std::string pais, dt, fed, conf;
         int pos = 0;
-        ranking = std::atoi(extraerCampo(linea, pos).c_str());
+        ranking = stringAInt(extraerCampo(linea, pos));
         pais    = extraerCampo(linea, pos);
         dt      = extraerCampo(linea, pos);
         fed     = extraerCampo(linea, pos);
         conf    = extraerCampo(linea, pos);
-        gf      = std::atoi(extraerCampo(linea, pos).c_str());
-        gc      = std::atoi(extraerCampo(linea, pos).c_str());
-        pg      = std::atoi(extraerCampo(linea, pos).c_str());
-        pe      = std::atoi(extraerCampo(linea, pos).c_str());
-        pp      = std::atoi(extraerCampo(linea, pos).c_str());
+        gf      = stringAInt(extraerCampo(linea, pos));
+        gc      = stringAInt(extraerCampo(linea, pos));
+        pg      = stringAInt(extraerCampo(linea, pos));
+        pe      = stringAInt(extraerCampo(linea, pos));
+        pp      = stringAInt(extraerCampo(linea, pos));
 
         Equipo tmp(ranking, pais, dt, fed, conf, gf, gc, pg, pe, pp);
         for (int j = 0; j < JUGADORES_POR_EQUIPO; ++j) {
@@ -283,6 +293,9 @@ void Torneo::cargarEquipos(const std::string& archivo) {
         idx++;
     }
     numEquipos = idx;
+    mostrarMetricas("Carga de equipos",
+                    sizeof(int)*6 + sizeof(std::string)*4,
+                    "ifstream de <fstream>");
     file.close();
     std::cout << "Cargados " << numEquipos << " equipos.\n";
 }
@@ -321,15 +334,27 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
     int ultimoDiaJugado[NUM_EQUIPOS];
     for (int i = 0; i < NUM_EQUIPOS; ++i) ultimoDiaJugado[i] = -99;
 
-    // Función auxiliar para encontrar el índice de un equipo
-    auto getIdxEquipo = [this](Equipo* eq) -> int {
-        for (int i = 0; i < numEquipos; ++i)
-            if (&equipos[i] == eq) return i;
-        return -1;
-    };
+    // Precalcular índice de cada equipo una sola vez
+    // Índice i contiene la posición de grupos[g]->getEquipo(i) en equipos[]
+    // Evita búsqueda lineal repetida dentro del triple loop
+    int idxEquipoEnTorneo[NUM_GRUPOS][EQUIPOS_POR_GRUPO];
+    for (int g = 0; g < NUM_GRUPOS; ++g) {
+        for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
+            Equipo* eq = grupos[g]->getEquipo(i);
+            idxEquipoEnTorneo[g][i] = -1;
+            for (int k = 0; k < numEquipos; ++k) {
+                incIteraciones(1);
+                if (&equipos[k] == eq) {
+                    idxEquipoEnTorneo[g][i] = k;
+                    break;
+                }
+            }
+        }
+    }
 
     // Para cada grupo asignar sus 3 jornadas
     for (int g = 0; g < NUM_GRUPOS; ++g) {
+        incIteraciones(1);
         std::string fechas[3];
 
         // Los partidos de cada jornada involucran los 4 equipos del grupo
@@ -353,7 +378,7 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
                 // en los últimos 3 días
                 bool diaValido = true;
                 for (int e = 0; e < 4; ++e) {
-                    int idx = getIdxEquipo(grupos[g]->getEquipo(equiposJornada[jornada][e]));
+                    int idx = idxEquipoEnTorneo[g][equiposJornada[jornada][e]];
                     if (idx != -1 && ultimoDiaJugado[idx] != -99) {
                         if (dia - ultimoDiaJugado[idx] < 3) {
                             diaValido = false;
@@ -367,7 +392,7 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
                     partidosPorDia[dia] += 2;
                     // Actualizar último día jugado para los 4 equipos
                     for (int e = 0; e < 4; ++e) {
-                        int idx = getIdxEquipo(grupos[g]->getEquipo(equiposJornada[jornada][e]));
+                        int idx = idxEquipoEnTorneo[g][equiposJornada[jornada][e]];
                         if (idx != -1) ultimoDiaJugado[idx] = dia;
                     }
                     break;
@@ -385,6 +410,9 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
         std::cout << "\n--- Grupo " << char('A'+g) << " ---\n";
         grupos[g]->imprimirPartidos();
         grupos[g]->imprimirTabla();
+        mostrarMetricas("Fase de grupos",
+                        sizeof(int)*19 + sizeof(int)*NUM_EQUIPOS + sizeof(int)*NUM_GRUPOS*EQUIPOS_POR_GRUPO,
+                        "rand() de <cstdlib>, pow() de <cmath>"); // idxEquipoEnTorneo
     }
 }
 
@@ -423,6 +451,7 @@ void Torneo::recolectarClasificados(Clasificado primeros[], int& pCount,
 void Torneo::ordenarTerceros(Clasificado terceros[], int& tCount) {
     for (int i = 0; i < tCount-1; ++i) {
         for (int j = i+1; j < tCount; ++j) {
+            Torneo::incIteraciones(1);
             bool intercambiar = false;
             if (terceros[j].puntos > terceros[i].puntos) intercambiar = true;
             else if (terceros[j].puntos == terceros[i].puntos) {
@@ -572,6 +601,7 @@ void Torneo::simularRonda(Equipo** participantes, int numParticipantes,
     int numPartidos = numParticipantes / 2;
     Partido** partidos = new Partido*[numPartidos];
     for (int i = 0; i < numPartidos; ++i) {
+        incIteraciones(1);
         partidos[i] = new Partido(participantes[2*i], participantes[2*i+1], fecha, "00:00", "nombreSede");
         partidos[i]->simular(esEliminatoria);
         partidos[i]->actualizarHistoricos();
@@ -610,6 +640,7 @@ void Torneo::calcularEstadisticasFinales(Equipo* campeon, Equipo* subcampeon,
     // Máximo goleador del equipo campeón
     Jugador* maxGoleadorCampeon = &campeon->getJugador(0);
     for (int i = 1; i < JUGADORES_POR_EQUIPO; ++i) {
+        incIteraciones(1);
         if (campeon->getJugador(i).getGoles() > maxGoleadorCampeon->getGoles())
             maxGoleadorCampeon = &campeon->getJugador(i);
     }
@@ -621,6 +652,7 @@ void Torneo::calcularEstadisticasFinales(Equipo* campeon, Equipo* subcampeon,
     Jugador* mejores[3] = {nullptr, nullptr, nullptr};
     for (int i = 0; i < numEquipos; ++i) {
         for (int j = 0; j < JUGADORES_POR_EQUIPO; ++j) {
+            incIteraciones(1);
             Jugador* jug = &equipos[i].getJugador(j);
             int g = jug->getGoles();
             if (!mejores[0] || g > mejores[0]->getGoles()) {
@@ -755,4 +787,57 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     contarConfederaciones(participantesR4, countR4);
 
     calcularEstadisticasFinales(campeon, subcampeon, tercero, cuarto);
+    mostrarMetricas("Eliminatorias completas",
+                    sizeof(Clasificado)*12*3 + sizeof(Equipo*)*32 + sizeof(Equipo*)*16 +
+                        sizeof(Equipo*)*8 + sizeof(Equipo*)*4,
+                    "rand() de <cstdlib>, pow() de <cmath>");
 }
+    // ----------------------------------------------------------------------
+    // Métricas de eficiencia
+    // ----------------------------------------------------------------------
+    long long Torneo::totalIteraciones = 0;
+
+    void Torneo::incIteraciones(long long n) {
+        totalIteraciones += n;
+    }
+
+    size_t Torneo::calcularMemoriaActual() {
+        size_t total = 0;
+
+        // Equipos: arreglo fijo de NUM_EQUIPOS
+        // Cada Equipo tiene sus campos primitivos + puntero a Jugador[]
+        total += NUM_EQUIPOS * sizeof(Equipo);
+        total += NUM_EQUIPOS * JUGADORES_POR_EQUIPO * sizeof(Jugador);
+
+        // Grupos: NUM_GRUPOS punteros, cada uno apunta a un Grupo en heap
+        // Cada Grupo tiene arreglo de punteros a Equipo y puntero a Partido[]
+        total += NUM_GRUPOS * sizeof(Grupo);
+        total += NUM_GRUPOS * PARTIDOS_POR_GRUPO * sizeof(Partido);
+        // Cada Partido tiene dos arreglos de 11 Convocados en heap
+        total += NUM_GRUPOS * PARTIDOS_POR_GRUPO * 2 * 11 * sizeof(Convocado);
+
+        // Bombos: arreglo 2D de punteros (no se duplica memoria, son alias)
+        total += BOMBOS * EQUIPOS_POR_BOMBO * sizeof(Equipo*);
+
+        // Arreglos de participantes por ronda
+        total += 32 * sizeof(Equipo*);  // participantesR16
+        total += 16 * sizeof(Equipo*);  // participantesR8
+        total += 8  * sizeof(Equipo*);  // participantesR4
+
+        // Variables de control del torneo
+        total += sizeof(int) * 4; // numEquipos, countR16, countR8, countR4
+
+        return total;
+    }
+
+    void Torneo::mostrarMetricas(const std::string& etapa, size_t bytesLocales,
+                                 const std::string& componentesExternos) {
+        std::cout << "\n--- Métricas de eficiencia: " << etapa << " ---\n";
+        std::cout << "Iteraciones acumuladas: " << totalIteraciones << "\n";
+        size_t total = calcularMemoriaActual() + bytesLocales;
+        std::cout << "Memoria estimada en uso: " << total
+                  << " bytes (" << total / 1024 << " KB)\n";
+        if (!componentesExternos.empty())
+            std::cout << "Componentes externos: " << componentesExternos << "\n";
+    }
+

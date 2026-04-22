@@ -1,7 +1,7 @@
 #include "Grupo.h"
 #include <iostream>
-#include <cstdio>
 #include <cstdlib>
+#include "Metricas.h"
 
 Grupo::Grupo(char letra) : letra(letra) {
     for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) equipos[i] = nullptr;
@@ -78,6 +78,7 @@ void Grupo::calcularEstadisticas(
 
     // Recorrer partidos
     for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
+        incIter(1);
         if (!partidos[i]) continue;
 
         int g1 = partidos[i]->getGolesEq1();
@@ -146,8 +147,10 @@ void Grupo::configurarPartidos(const std::string& f1,
 }
 
 void Grupo::simularEtapa(bool esEliminatoria) {
-    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i)
+    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
+        incIter(1);
         if (partidos[i]) partidos[i]->simular(esEliminatoria);
+    }
 }
 
 void Grupo::actualizarHistoricos() {
@@ -231,17 +234,21 @@ void Grupo::imprimirTabla() const {
         while ((int)nombre.size() < 20) nombre += ' ';
         if ((int)nombre.size() > 20) nombre = nombre.substr(0, 20);
 
-        char dg[8];
-        sprintf(dg, "%+3d", difGoles[k]);
+        std::string dg = "";
+        if (difGoles[k] >= 0) dg += '+';
+        else { dg += '-'; }
+        int absDif = difGoles[k] >= 0 ? difGoles[k] : -difGoles[k];
+        if (absDif < 10) dg += ' ';
+        dg += intAString(absDif, 1);
 
-        printf("| %s | %2d| %2d| %2d| %2d| %s| %3d|\n",
-               nombre.c_str(),
-               pj[k],
-               ganados[k],
-               empatados[k],
-               perdidos[k],
-               dg,
-               puntos[k]);
+        std::cout << "| " << nombre
+                  << " | " << (pj[k] < 10 ? " " : "") << pj[k]
+                  << "| " << (ganados[k] < 10 ? " " : "") << ganados[k]
+                  << "| " << (empatados[k] < 10 ? " " : "") << empatados[k]
+                  << "| " << (perdidos[k] < 10 ? " " : "") << perdidos[k]
+                  << "| " << dg
+                  << "| " << (puntos[k] < 10 ? "  " : (puntos[k] < 100 ? " " : "")) << puntos[k]
+                  << "|\n";
     }
 
     std::cout << "+----------------------+---+---+---+---+----+----+\n";

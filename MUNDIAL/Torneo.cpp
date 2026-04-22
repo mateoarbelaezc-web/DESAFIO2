@@ -6,6 +6,22 @@
 #include <ctime>
 #include <cstring>
 
+// AGREGAR al inicio de Torneo.cpp, antes del constructor
+// RAZÓN: sumarDias se necesita en simularFaseGrupos para calcular fechas
+static std::string sumarDias(const std::string& fecha, int dias) {
+    int dia, mes, anio;
+    sscanf(fecha.c_str(), "%d/%d/%d", &dia, &mes, &anio);
+    int diasPorMes[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+    dia += dias;
+    while (dia > diasPorMes[mes-1]) {
+        dia -= diasPorMes[mes-1];
+        mes++;
+        if (mes > 12) { mes = 1; anio++; }
+    }
+    char buffer[11];
+    sprintf(buffer, "%02d/%02d/%04d", dia, mes, anio);
+    return std::string(buffer);
+}
 // ----------------------------------------------------------------------
 // Constructor y destructor
 // ----------------------------------------------------------------------
@@ -232,9 +248,86 @@ void Torneo::conformarBombos() {
 // ----------------------------------------------------------------------
 // Fase de grupos
 // ----------------------------------------------------------------------
+// CAMBIO: simularFaseGrupos ahora calendariza los partidos antes de simularlos
+// RAZÓN: El enunciado exige que ningún día tenga más de 4 partidos y que
+//        ningún equipo juegue más de 1 partido en un lapso de 3 días
 void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
+
+    // Cada grupo necesita 3 fechas distintas (jornada 1, 2 y 3)
+    // Total: 12 grupos x 3 jornadas = 36 slots de fecha a asignar
+    // Con máximo 4 partidos por día necesitamos al menos 9 días distintos
+    // pero como cada partido ocupa 2 slots (2 partidos por jornada por grupo)
+    // necesitamos distribuir 36 asignaciones de fecha
+
+    // Arreglo que cuenta cuántos partidos hay por día
+    // Índice 0 = día 1 (fechaInicio), índice 1 = día 2, etc.
+    int partidosPorDia[19] = {0};
+
+    // Para cada equipo, guardar el índice del último día que jugó
+    // -99 significa que aún no ha jugado
+    int ultimoDiaJugado[NUM_EQUIPOS];
+    for (int i = 0; i < NUM_EQUIPOS; ++i) ultimoDiaJugado[i] = -99;
+
+    // Función auxiliar para encontrar el índice de un equipo
+    auto getIdxEquipo = [this](Equipo* eq) -> int {
+        for (int i = 0; i < numEquipos; ++i)
+            if (&equipos[i] == eq) return i;
+        return -1;
+    };
+
+    // Para cada grupo asignar sus 3 jornadas
     for (int g = 0; g < NUM_GRUPOS; ++g) {
-        grupos[g]->configurarPartidos(fechaInicio);
+        std::string fechas[3];
+        int diasAsignados = 0;
+
+        // Los partidos de cada jornada involucran los 4 equipos del grupo
+        // Jornada 1: equipo0 vs equipo1, equipo2 vs equipo3
+        // Jornada 2: equipo0 vs equipo2, equipo1 vs equipo3
+        // Jornada 3: equipo0 vs equipo3, equipo1 vs equipo2
+        int equiposJornada[3][4] = {
+            {0, 1, 2, 3},  // jornada 1: todos juegan
+            {0, 2, 1, 3},  // jornada 2: todos juegan
+            {0, 3, 1, 2}   // jornada 3: todos juegan
+        };
+
+        for (int jornada = 0; jornada < 3; ++jornada) {
+            // Buscar un día válido para esta jornada
+            for (int dia = 0; dia < 19; ++dia) {
+                // Verificar límite de 4 partidos por día
+                // cada jornada agrega 2 partidos
+                if (partidosPorDia[dia] + 2 > 4) continue;
+
+                // Verificar que ningún equipo de este grupo haya jugado
+                // en los últimos 3 días
+                bool diaValido = true;
+                for (int e = 0; e < 4; ++e) {
+                    int idx = getIdxEquipo(grupos[g]->getEquipo(equiposJornada[jornada][e]));
+                    if (idx != -1 && ultimoDiaJugado[idx] != -99) {
+                        if (dia - ultimoDiaJugado[idx] < 3) {
+                            diaValido = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (diaValido) {
+                    fechas[jornada] = sumarDias(fechaInicio, dia);
+                    partidosPorDia[dia] += 2;
+                    // Actualizar último día jugado para los 4 equipos
+                    for (int e = 0; e < 4; ++e) {
+                        int idx = getIdxEquipo(grupos[g]->getEquipo(equiposJornada[jornada][e]));
+                        if (idx != -1) ultimoDiaJugado[idx] = dia;
+                    }
+                    break;
+                }
+            }
+        }
+
+        grupos[g]->configurarPartidos(fechas[0], fechas[1], fechas[2]);
+    }
+
+    // Simular y mostrar resultados
+    for (int g = 0; g < NUM_GRUPOS; ++g) {
         grupos[g]->simularEtapa(false);
         grupos[g]->actualizarHistoricos();
         std::cout << "\n--- Grupo " << char('A'+g) << " ---\n";

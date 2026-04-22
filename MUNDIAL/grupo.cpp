@@ -44,10 +44,13 @@ void Grupo::asignarEquipos(Equipo* e1, Equipo* e2, Equipo* e3, Equipo* e4) {
     equipos[0] = e1; equipos[1] = e2; equipos[2] = e3; equipos[3] = e4;
 }
 
-void Grupo::configurarPartidos(const std::string& fechaInicio) {
-    std::string f1 = fechaInicio;
-    std::string f2 = sumarDias(f1, 3);
-    std::string f3 = sumarDias(f2, 3);
+// CAMBIO: configurarPartidos ahora recibe las 3 fechas como parámetros
+// RAZÓN: La asignación de fechas debe hacerse desde Torneo porque necesita
+//        conocer todos los partidos de todos los grupos simultáneamente
+//        para respetar el límite de 4 partidos por día
+void Grupo::configurarPartidos(const std::string& f1,
+                               const std::string& f2,
+                               const std::string& f3) {
     partidos[0] = new Partido(equipos[0], equipos[1], f1, "00:00", "nombreSede");
     partidos[1] = new Partido(equipos[2], equipos[3], f1, "00:00", "nombreSede");
     partidos[2] = new Partido(equipos[0], equipos[2], f2, "00:00", "nombreSede");

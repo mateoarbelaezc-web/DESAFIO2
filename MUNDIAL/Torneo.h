@@ -67,7 +67,6 @@ public:
     void sortearGrupos();
     void simularFaseGrupos(const std::string& fechaInicio);
     void simularEliminatorias(const std::string& fechaEliminatorias);
-    void generarEstadisticasFinales();
     void imprimirGrupos();
 
     // Métricas

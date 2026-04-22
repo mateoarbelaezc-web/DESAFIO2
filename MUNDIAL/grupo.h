@@ -20,6 +20,16 @@ public:
     void asignarEquipos(Equipo* e1, Equipo* e2, Equipo* e3, Equipo* e4);
     void setEquipo(int idx, Equipo* eq);
     Equipo* getEquipo(int idx) const;
+    void calcularEstadisticas(
+        int puntos[],
+        int difGoles[],
+        int golesFavor[],
+        int golesContra[],
+        int ganados[],
+        int empatados[],
+        int perdidos[],
+        int pj[]
+        ) const;
     void configurarPartidos(const std::string& f1,
                             const std::string& f2,
                             const std::string& f3);

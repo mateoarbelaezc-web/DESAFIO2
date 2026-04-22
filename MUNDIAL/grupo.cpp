@@ -3,23 +3,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-std::string sumarDias(const std::string& fecha, int dias) {
-    int dia, mes, anio;
-    sscanf(fecha.c_str(), "%d/%d/%d", &dia, &mes, &anio);
-    dia += dias;
-    while (dia > 30) {
-        dia -= 30;
-        mes++;
-        if (mes > 12) {
-            mes = 1;
-            anio++;
-        }
-    }
-    char buffer[11];
-    sprintf(buffer, "%02d/%02d/%04d", dia, mes, anio);
-    return std::string(buffer);
-}
-
 Grupo::Grupo(char letra) : letra(letra) {
     for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) equipos[i] = nullptr;
     for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) partidos[i] = nullptr;
@@ -37,6 +20,79 @@ void Grupo::setEquipo(int idx, Equipo* eq) {
 Equipo* Grupo::getEquipo(int idx) const {
     if (idx >= 0 && idx < EQUIPOS_POR_GRUPO) return equipos[idx];
     return nullptr;
+}
+
+void Grupo::calcularEstadisticas(
+    int puntos[],
+    int difGoles[],
+    int golesFavor[],
+    int golesContra[],
+    int ganados[],
+    int empatados[],
+    int perdidos[],
+    int pj[]
+    ) const {
+
+    // Inicializar
+    for (int i = 0; i < 4; ++i) {
+        puntos[i] = 0;
+        difGoles[i] = 0;
+        golesFavor[i] = 0;
+        golesContra[i] = 0;
+        ganados[i] = 0;
+        empatados[i] = 0;
+        perdidos[i] = 0;
+        pj[i] = 0;
+    }
+
+    // Recorrer partidos
+    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
+        if (!partidos[i]) continue;
+
+        int g1 = partidos[i]->getGolesEq1();
+        int g2 = partidos[i]->getGolesEq2();
+
+        Equipo* eq1 = partidos[i]->getEquipo1();
+        Equipo* eq2 = partidos[i]->getEquipo2();
+
+        int idx1 = -1, idx2 = -1;
+
+        for (int j = 0; j < 4; ++j) {
+            if (equipos[j] == eq1) idx1 = j;
+            if (equipos[j] == eq2) idx2 = j;
+        }
+
+        if (idx1 == -1 || idx2 == -1) continue;
+
+        pj[idx1]++;
+        pj[idx2]++;
+
+        golesFavor[idx1] += g1;
+        golesFavor[idx2] += g2;
+
+        golesContra[idx1] += g2;
+        golesContra[idx2] += g1;
+
+        difGoles[idx1] += (g1 - g2);
+        difGoles[idx2] += (g2 - g1);
+
+        if (g1 > g2) {
+            puntos[idx1] += 3;
+            ganados[idx1]++;
+            perdidos[idx2]++;
+        }
+        else if (g2 > g1) {
+            puntos[idx2] += 3;
+            ganados[idx2]++;
+            perdidos[idx1]++;
+        }
+        else {
+            puntos[idx1]++;
+            puntos[idx2]++;
+            empatados[idx1]++;
+            empatados[idx2]++;
+        }
+    }
 }
 
 void Grupo::asignarEquipos(Equipo* e1, Equipo* e2, Equipo* e3, Equipo* e4) {
@@ -72,29 +128,12 @@ void Grupo::obtenerClasificados(Equipo*& primero, Equipo*& segundo, Equipo*& ter
                                 int& pts1, int& dif1, int& gf1,
                                 int& pts2, int& dif2, int& gf2,
                                 int& pts3, int& dif3, int& gf3) const {
-    int puntos[4] = {0};
-    int difGoles[4] = {0};
-    int golesFavor[4] = {0};
-    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
-        if (!partidos[i]) continue;
-        int g1 = partidos[i]->getGolesEq1();
-        int g2 = partidos[i]->getGolesEq2();
-        Equipo* eq1 = partidos[i]->getEquipo1();
-        Equipo* eq2 = partidos[i]->getEquipo2();
-        int idx1 = -1, idx2 = -1;
-        for (int j = 0; j < 4; ++j) {
-            if (equipos[j] == eq1) idx1 = j;
-            if (equipos[j] == eq2) idx2 = j;
-        }
-        if (idx1 == -1 || idx2 == -1) continue;
-        if (g1 > g2) puntos[idx1] += 3;
-        else if (g2 > g1) puntos[idx2] += 3;
-        else { puntos[idx1] += 1; puntos[idx2] += 1; }
-        difGoles[idx1] += (g1 - g2);
-        difGoles[idx2] += (g2 - g1);
-        golesFavor[idx1] += g1;
-        golesFavor[idx2] += g2;
-    }
+    int puntos[4], difGoles[4], golesFavor[4], golesContra[4];
+    int ganados[4], empatados[4], perdidos[4], pj[4];
+
+    calcularEstadisticas(puntos, difGoles, golesFavor, golesContra,
+                         ganados, empatados, perdidos, pj);
+
     int indices[4] = {0,1,2,3};
     for (int i = 0; i < 3; ++i) {
         for (int j = i+1; j < 4; ++j) {
@@ -122,14 +161,59 @@ void Grupo::obtenerClasificados(Equipo*& primero, Equipo*& segundo, Equipo*& ter
 }
 
 void Grupo::imprimirTabla() const {
-    Equipo *p1, *p2, *p3;
-    int pts1, dif1, gf1, pts2, dif2, gf2, pts3, dif3, gf3;
-    obtenerClasificados(p1, p2, p3, pts1, dif1, gf1, pts2, dif2, gf2, pts3, dif3, gf3);
-    std::cout << "Grupo " << letra << ":\n";
-    std::cout << "  1. " << p1->getPais() << "\n  2. " << p2->getPais() << "\n  3. " << p3->getPais() << "\n  4. ";
-    for (int i = 0; i < 4; ++i)
-        if (equipos[i] != p1 && equipos[i] != p2 && equipos[i] != p3)
-            std::cout << equipos[i]->getPais() << "\n";
+    int puntos[4], difGoles[4], golesFavor[4], golesContra[4];
+    int ganados[4], empatados[4], perdidos[4], pj[4];
+
+    calcularEstadisticas(puntos, difGoles, golesFavor, golesContra,
+                         ganados, empatados, perdidos, pj);
+
+    int indices[4] = {0,1,2,3};
+
+    for (int i = 0; i < 3; ++i)
+        for (int j = i+1; j < 4; ++j) {
+            bool swap = false;
+
+            if (puntos[indices[j]] > puntos[indices[i]]) swap = true;
+            else if (puntos[indices[j]] == puntos[indices[i]]) {
+                if (difGoles[indices[j]] > difGoles[indices[i]]) swap = true;
+                else if (difGoles[indices[j]] == difGoles[indices[i]] &&
+                         golesFavor[indices[j]] > golesFavor[indices[i]])
+                    swap = true;
+            }
+
+            if (swap) {
+                int t = indices[i];
+                indices[i] = indices[j];
+                indices[j] = t;
+            }
+        }
+
+    std::cout << "\n+--Grupo " << letra
+              << "-------------------------------------------+\n";
+    std::cout << "| Equipo               | PJ| PG| PE| PP|  DG| PTS|\n";
+    std::cout << "+----------------------+---+---+---+---+----+----+\n";
+
+    for (int i = 0; i < 4; ++i) {
+        int k = indices[i];
+
+        std::string nombre = equipos[k]->getPais();
+        while ((int)nombre.size() < 20) nombre += ' ';
+        if ((int)nombre.size() > 20) nombre = nombre.substr(0, 20);
+
+        char dg[8];
+        sprintf(dg, "%+3d", difGoles[k]);
+
+        printf("| %s | %2d| %2d| %2d| %2d| %s| %3d|\n",
+               nombre.c_str(),
+               pj[k],
+               ganados[k],
+               empatados[k],
+               perdidos[k],
+               dg,
+               puntos[k]);
+    }
+
+    std::cout << "+----------------------+---+---+---+---+----+----+\n";
 }
 
 void Grupo::imprimirPartidos() const {

@@ -702,7 +702,3 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
 
     calcularEstadisticasFinales(campeon, subcampeon, tercero, cuarto);
 }
-
-void Torneo::generarEstadisticasFinales() {
-    // Este método se deja vacío porque la funcionalidad ya está en calcularEstadisticasFinales
-}

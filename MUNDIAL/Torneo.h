@@ -9,14 +9,16 @@ const int NUM_GRUPOS = 12;
 const int BOMBOS = 4;
 const int EQUIPOS_POR_BOMBO = 12;
 
-// Estructura auxiliar para guardar información de clasificados
-struct Clasificado {
+class Clasificado {
+public:
     Equipo* equipo;
     int puntos;
     int diferenciaGoles;
     int golesFavor;
     char grupo;
-    int posicion; // 1=primero, 2=segundo, 3=tercero
+    int posicion;
+    Clasificado() : equipo(nullptr), puntos(0), diferenciaGoles(0),
+        golesFavor(0), grupo(' '), posicion(0) {}
 };
 
 class Torneo {
@@ -29,7 +31,9 @@ private:
     // Métodos privados
     void ordenarEquiposPorRanking(Equipo* lista[], int n);
     void distribuirBombos();
-    bool respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount);
+    // ANTES: bool respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount);
+    // AHORA: bool respetaConfederaciones(Equipo* equipo, Grupo* grupo);
+    bool respetaConfederaciones(Equipo* equipo, Grupo* grupo);
     void recolectarClasificados(Clasificado primeros[], int& pCount,
                                 Clasificado segundos[], int& sCount,
                                 Clasificado terceros[], int& tCount);

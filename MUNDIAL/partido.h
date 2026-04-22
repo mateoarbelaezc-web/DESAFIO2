@@ -4,17 +4,22 @@
 #include "Equipo.h"
 #include <string>
 
-struct EstadisticasJugadorPartido {
+class EstadisticasJugadorPartido {
+public:
     int goles;
     int tarjetasAmarillas;
     int tarjetasRojas;
     int faltas;
     int minutos;
+    EstadisticasJugadorPartido() : goles(0), tarjetasAmarillas(0),
+        tarjetasRojas(0), faltas(0), minutos(0) {}
 };
 
-struct Convocado {
+class Convocado {
+public:
     Jugador* jugador;
     EstadisticasJugadorPartido stats;
+    Convocado() : jugador(nullptr) {}
 };
 
 class Partido {

@@ -66,63 +66,101 @@ void Torneo::distribuirBombos() {
 // ----------------------------------------------------------------------
 // Restricción de confederaciones para el sorteo
 // ----------------------------------------------------------------------
-bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount) {
+// ANTES: bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount)
+// AHORA: bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo)
+// RAZÓN: La función ahora cuenta internamente los equipos UEFA del grupo
+//        en lugar de recibir ese valor como parámetro externo
+bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo) {
     std::string conf = equipo->getConfederacion();
+    int countConf = 0;
     for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
         Equipo* eq = grupo->getEquipo(i);
         if (!eq) continue;
         if (eq->getConfederacion() == conf) {
-            if (conf == "UEFA" && uefaCount < 2) return true;
-            else return false;
+            countConf++;
+            if (conf == "UEFA" && countConf >= 2) return false;
+            if (conf != "UEFA") return false;
         }
     }
     return true;
 }
-
 // ----------------------------------------------------------------------
 // Sorteo de grupos
 // ----------------------------------------------------------------------
+// RAZÓN: El algoritmo anterior causaba dos problemas:
+//        1. Equipos duplicados en distintos grupos
+//        2. Violaciones de restricciones de confederación
+//        El nuevo algoritmo garantiza grupos válidos siempre
 void Torneo::sortearGrupos() {
-    // Mezclar cada bombo
-    for (int b = 0; b < BOMBOS; ++b) {
-        for (int i = 0; i < EQUIPOS_POR_BOMBO; ++i) {
-            int j = rand() % EQUIPOS_POR_BOMBO;
-            Equipo* temp = bombos[b][i];
-            bombos[b][i] = bombos[b][j];
-            bombos[b][j] = temp;
-        }
-    }
-    // Asignar a grupos
-    for (int bombo = 0; bombo < BOMBOS; ++bombo) {
-        for (int g = 0; g < NUM_GRUPOS; ++g) {
-            Equipo* equipo = bombos[bombo][g];
-            int uefaCount = 0;
-            for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
-                Equipo* e = grupos[g]->getEquipo(i);
-                if (e && e->getConfederacion() == "UEFA") uefaCount++;
+    bool sorteoValido = false;
+    int intentos = 0;
+
+    while (!sorteoValido && intentos < 100000) {
+        intentos++;
+
+        // Limpiar grupos
+        for (int g = 0; g < NUM_GRUPOS; ++g)
+            for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i)
+                grupos[g]->setEquipo(i, nullptr);
+
+        // Mezclar cada bombo
+        for (int b = 0; b < BOMBOS; ++b)
+            for (int i = EQUIPOS_POR_BOMBO - 1; i > 0; --i) {
+                int j = rand() % (i + 1);
+                Equipo* temp = bombos[b][i];
+                bombos[b][i] = bombos[b][j];
+                bombos[b][j] = temp;
             }
-            if (!respetaConfederaciones(equipo, grupos[g], uefaCount)) {
-                for (int otro = 0; otro < NUM_GRUPOS; ++otro) {
-                    if (otro == g) continue;
-                    int uefaCount2 = 0;
-                    for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
-                        Equipo* e = grupos[otro]->getEquipo(i);
-                        if (e && e->getConfederacion() == "UEFA") uefaCount2++;
-                    }
-                    if (respetaConfederaciones(equipo, grupos[otro], uefaCount2)) {
-                        Equipo* aux = bombos[bombo][otro];
-                        bombos[bombo][otro] = equipo;
-                        bombos[bombo][g] = aux;
+
+        // Asignar bombo por bombo
+        sorteoValido = true;
+        for (int bombo = 0; bombo < BOMBOS && sorteoValido; ++bombo) {
+
+            // Crear lista de grupos disponibles para este bombo
+            int gruposDisponibles[NUM_GRUPOS];
+            int numDisponibles = NUM_GRUPOS;
+            for (int g = 0; g < NUM_GRUPOS; ++g)
+                gruposDisponibles[g] = g;
+
+            // Asignar cada equipo del bombo a un grupo disponible
+            for (int e = 0; e < EQUIPOS_POR_BOMBO && sorteoValido; ++e) {
+                Equipo* equipo = bombos[bombo][e];
+                bool asignado = false;
+
+                // Mezclar grupos disponibles para aleatorizar
+                for (int i = numDisponibles - 1; i > 0; --i) {
+                    int j = rand() % (i + 1);
+                    int temp = gruposDisponibles[i];
+                    gruposDisponibles[i] = gruposDisponibles[j];
+                    gruposDisponibles[j] = temp;
+                }
+
+                // Buscar grupo válido
+                for (int i = 0; i < numDisponibles; ++i) {
+                    int g = gruposDisponibles[i];
+                    if (respetaConfederaciones(equipo, grupos[g])) {
+                        grupos[g]->setEquipo(bombo, equipo);
+                        // Remover este grupo de disponibles
+                        gruposDisponibles[i] = gruposDisponibles[--numDisponibles];
+                        asignado = true;
                         break;
                     }
                 }
+
+                if (!asignado) sorteoValido = false;
             }
-            grupos[g]->setEquipo(bombo, equipo);
         }
     }
-    imprimirGrupos();
-}
 
+    if (!sorteoValido)
+        std::cerr << "No se pudo generar sorteo valido despues de "
+                  << intentos << " intentos\n";
+    else {
+        std::cout << "Sorteo valido encontrado en " << intentos
+                  << " intento(s)\n";
+        imprimirGrupos();
+    }
+}
 void Torneo::imprimirGrupos() {
     std::cout << "\n=== GRUPOS SORTEADOS ===\n";
     for (int g = 0; g < NUM_GRUPOS; ++g) {
@@ -215,10 +253,25 @@ void Torneo::recolectarClasificados(Clasificado primeros[], int& pCount,
     for (int g = 0; g < NUM_GRUPOS; ++g) {
         Equipo *p1, *p2, *p3;
         int pts1, dif1, gf1, pts2, dif2, gf2, pts3, dif3, gf3;
-        grupos[g]->obtenerClasificados(p1, p2, p3, pts1, dif1, gf1, pts2, dif2, gf2, pts3, dif3, gf3);
-        primeros[pCount++] = {p1, pts1, dif1, gf1, char('A'+g), 1};
-        segundos[sCount++] = {p2, pts2, dif2, gf2, char('A'+g), 2};
-        terceros[tCount++] = {p3, pts3, dif3, gf3, char('A'+g), 3};
+        grupos[g]->obtenerClasificados(p1, p2, p3, pts1, dif1, gf1,
+                                       pts2, dif2, gf2, pts3, dif3, gf3);
+
+        // CAMBIO: inicialización con llaves {} no funciona con class
+        // RAZÓN: class no soporta aggregate initialization como struct
+        Clasificado c1;
+        c1.equipo = p1; c1.puntos = pts1; c1.diferenciaGoles = dif1;
+        c1.golesFavor = gf1; c1.grupo = char('A'+g); c1.posicion = 1;
+        primeros[pCount++] = c1;
+
+        Clasificado c2;
+        c2.equipo = p2; c2.puntos = pts2; c2.diferenciaGoles = dif2;
+        c2.golesFavor = gf2; c2.grupo = char('A'+g); c2.posicion = 2;
+        segundos[sCount++] = c2;
+
+        Clasificado c3;
+        c3.equipo = p3; c3.puntos = pts3; c3.diferenciaGoles = dif3;
+        c3.golesFavor = gf3; c3.grupo = char('A'+g); c3.posicion = 3;
+        terceros[tCount++] = c3;
     }
 }
 

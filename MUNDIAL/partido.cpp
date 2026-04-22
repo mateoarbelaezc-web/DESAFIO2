@@ -146,24 +146,20 @@ void Partido::simular(bool esEliminatoria) {
             convocadosEq1[i].stats.minutos = minutosPartido;
             convocadosEq2[i].stats.minutos = minutosPartido;
         }
-        if (equipo1->getRanking() < equipo2->getRanking()) {
+        // Sesgar aleatoriedad por ranking: menor ranking = mejor equipo = mayor probabilidad
+        // Si r1=1 y r2=10, probEq1 = 10/11 ≈ 91% de ganar
+        int r1 = equipo1->getRanking();
+        int r2 = equipo2->getRanking();
+        double probEq1 = static_cast<double>(r2) / (r1 + r2);
+        double aleatorio = static_cast<double>(rand()) / RAND_MAX;
+        if (aleatorio < probEq1) {
             golesEq1++;
             int idx = rand() % 11;
             convocadosEq1[idx].stats.goles++;
-        } else if (equipo2->getRanking() < equipo1->getRanking()) {
+        } else {
             golesEq2++;
             int idx = rand() % 11;
             convocadosEq2[idx].stats.goles++;
-        } else {
-            if (rand() % 2 == 0) {
-                golesEq1++;
-                int idx = rand() % 11;
-                convocadosEq1[idx].stats.goles++;
-            } else {
-                golesEq2++;
-                int idx = rand() % 11;
-                convocadosEq2[idx].stats.goles++;
-            }
         }
     }
     calcularPosesion();

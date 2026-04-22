@@ -411,6 +411,40 @@ bool Torneo::mismoGrupo(Equipo* a, Equipo* b) {
     return false;
 }
 
+void Torneo::contarConfederaciones(Equipo** lista, int n) {
+    std::string confs[10];
+    int conteo[10] = {0};
+    int totalConfs = 0;
+
+    for (int i = 0; i < n; ++i) {
+        std::string conf = lista[i]->getConfederacion();
+        bool encontrada = false;
+
+        for (int j = 0; j < totalConfs; ++j) {
+            if (confs[j] == conf) {
+                conteo[j]++;
+                encontrada = true;
+                break;
+            }
+        }
+
+        if (!encontrada) {
+            confs[totalConfs] = conf;
+            conteo[totalConfs] = 1;
+            totalConfs++;
+        }
+    }
+
+    int maxIdx = 0;
+    for (int i = 1; i < totalConfs; ++i)
+        if (conteo[i] > conteo[maxIdx])
+            maxIdx = i;
+
+    std::cout << "Confederacion con mas equipos: "
+              << confs[maxIdx]
+              << " (" << conteo[maxIdx] << " equipos)\n";
+}
+
 // ----------------------------------------------------------------------
 // Generación de enfrentamientos de R16
 // ----------------------------------------------------------------------
@@ -592,16 +626,25 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     Equipo* ronda16[16];
     int numRonda16;
     simularRonda(ronda32, numRonda32, fechaEliminatorias, true, ronda16, numRonda16);
+    countR16 = numRonda32;
+    for (int i = 0; i < numRonda32; ++i)
+        participantesR16[i] = ronda32[i];
 
     std::cout << "\n=== OCTAVOS DE FINAL ===\n";
     Equipo* ronda8[8];
     int numRonda8;
     simularRonda(ronda16, numRonda16, fechaEliminatorias, true, ronda8, numRonda8);
+    countR8 = numRonda16;
+    for (int i = 0; i < numRonda16; ++i)
+        participantesR8[i] = ronda16[i];
 
     std::cout << "\n=== CUARTOS DE FINAL ===\n";
     Equipo* ronda4[4];
     int numRonda4;
     simularRonda(ronda8, numRonda8, fechaEliminatorias, true, ronda4, numRonda4);
+    countR4 = numRonda8;
+    for (int i = 0; i < numRonda8; ++i)
+        participantesR4[i] = ronda8[i];
 
     // Semifinales (manualmente para guardar perdedores)
     std::cout << "\n=== SEMIFINALES ===\n";
@@ -645,6 +688,17 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     Equipo* campeon = (final->getGolesEq1() > final->getGolesEq2()) ? final->getEquipo1() : final->getEquipo2();
     Equipo* subcampeon = (campeon == final->getEquipo1()) ? final->getEquipo2() : final->getEquipo1();
     delete final;
+
+    std::cout << "\n=== CONFEDERACIONES POR ETAPA ===\n";
+
+    std::cout << "R16:\n";
+    contarConfederaciones(participantesR16, countR16);
+
+    std::cout << "R8:\n";
+    contarConfederaciones(participantesR8, countR8);
+
+    std::cout << "R4:\n";
+    contarConfederaciones(participantesR4, countR4);
 
     calcularEstadisticasFinales(campeon, subcampeon, tercero, cuarto);
 }

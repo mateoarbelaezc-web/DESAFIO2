@@ -39,6 +39,7 @@ private:
                                 Clasificado terceros[], int& tCount);
     void ordenarTerceros(Clasificado terceros[], int& tCount);
     bool mismoGrupo(Equipo* a, Equipo* b);
+    void contarConfederaciones(Equipo** lista, int n);
     void generarEnfrentamientosR16(Clasificado primeros[], int pCount,
                                    Clasificado segundos[], int sCount,
                                    Clasificado terceros[], int tCount,
@@ -49,6 +50,13 @@ private:
     void imprimirGoleadoresGlobal();
     void calcularEstadisticasFinales(Equipo* campeon, Equipo* subcampeon,
                                      Equipo* tercero, Equipo* cuarto);
+    Equipo* participantesR16[32];
+    Equipo* participantesR8[16];
+    Equipo* participantesR4[8];
+
+    int countR16;
+    int countR8;
+    int countR4;
 
 public:
     Torneo();

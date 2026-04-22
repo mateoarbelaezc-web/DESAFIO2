@@ -12,6 +12,37 @@ Grupo::~Grupo() {
     for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i)
         delete partidos[i];
 }
+// Constructor de copia de Grupo
+// RAZÓN: copia profunda de los partidos
+//        los punteros a equipos[] se comparten porque
+//        los equipos son propiedad del Torneo
+Grupo::Grupo(const Grupo& otro) : letra(otro.letra) {
+    for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i)
+        equipos[i] = otro.equipos[i];
+    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
+        if (otro.partidos[i])
+            partidos[i] = new Partido(*otro.partidos[i]);
+        else
+            partidos[i] = nullptr;
+    }
+}
+
+// Operador de asignación de Grupo
+Grupo& Grupo::operator=(const Grupo& otro) {
+    if (this == &otro) return *this;
+    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i)
+        delete partidos[i];
+    letra = otro.letra;
+    for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i)
+        equipos[i] = otro.equipos[i];
+    for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i) {
+        if (otro.partidos[i])
+            partidos[i] = new Partido(*otro.partidos[i]);
+        else
+            partidos[i] = nullptr;
+    }
+    return *this;
+}
 
 void Grupo::setEquipo(int idx, Equipo* eq) {
     if (idx >= 0 && idx < EQUIPOS_POR_GRUPO) equipos[idx] = eq;

@@ -72,8 +72,14 @@ void Partido::simularEventosJugador(Convocado& conv, int& golesRestantesEquipo, 
         }
     }
     conv.stats.faltas = faltas;
-    // Goles
-    while (golesRestantesEquipo > 0 && ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
+    // CAMBIO: distribución de goles
+    // ANTES: intentaba anotar con 4% pero si nadie anotaba el gol quedaba pendiente
+    // AHORA: por cada gol pendiente se repite hasta que algún jugador lo anote
+    // RAZÓN: el profesor indicó que los goles esperados siempre deben ocurrir,
+    //        el 4% define QUIÉN anota, no SI se anota
+    // NOTA: este jugador solo puede anotar si le toca en la iteración actual,
+    //       garantizando que el gol siempre se distribuye entre los convocados
+    if (golesRestantesEquipo > 0 && ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
         conv.stats.goles++;
         golesRestantesEquipo--;
     }
@@ -101,7 +107,43 @@ Partido::~Partido() {
     delete[] convocadosEq1;
     delete[] convocadosEq2;
 }
+// Constructor de copia de Partido
+// RAZÓN: copia profunda de los arreglos dinámicos de convocados
+//        los punteros a equipo1 y equipo2 se comparten (no se copian)
+//        porque los equipos son propiedad del Torneo, no del Partido
+Partido::Partido(const Partido& otro)
+    : fecha(otro.fecha), hora(otro.hora), sede(otro.sede),
+    equipo1(otro.equipo1), equipo2(otro.equipo2),
+    golesEq1(otro.golesEq1), golesEq2(otro.golesEq2),
+    posesionEq1(otro.posesionEq1), posesionEq2(otro.posesionEq2),
+    prorroga(otro.prorroga) {
+    // Copia profunda de los convocados
+    convocadosEq1 = new Convocado[11];
+    convocadosEq2 = new Convocado[11];
+    for (int i = 0; i < 11; ++i) {
+        convocadosEq1[i] = otro.convocadosEq1[i];
+        convocadosEq2[i] = otro.convocadosEq2[i];
+    }
+}
 
+// Operador de asignación de Partido
+Partido& Partido::operator=(const Partido& otro) {
+    if (this == &otro) return *this;
+    delete[] convocadosEq1;
+    delete[] convocadosEq2;
+    fecha = otro.fecha; hora = otro.hora; sede = otro.sede;
+    equipo1 = otro.equipo1; equipo2 = otro.equipo2;
+    golesEq1 = otro.golesEq1; golesEq2 = otro.golesEq2;
+    posesionEq1 = otro.posesionEq1; posesionEq2 = otro.posesionEq2;
+    prorroga = otro.prorroga;
+    convocadosEq1 = new Convocado[11];
+    convocadosEq2 = new Convocado[11];
+    for (int i = 0; i < 11; ++i) {
+        convocadosEq1[i] = otro.convocadosEq1[i];
+        convocadosEq2[i] = otro.convocadosEq2[i];
+    }
+    return *this;
+}
 void Partido::simular(bool esEliminatoria) {
     double lambda1 = calcularGolesEsperados(equipo1, equipo2);
     double lambda2 = calcularGolesEsperados(equipo2, equipo1);
@@ -122,15 +164,24 @@ void Partido::simular(bool esEliminatoria) {
         simularEventosJugador(convocadosEq2[i], golesRestantes2, minutosPartido);
     }
 
+    // CAMBIO: si después de recorrer los 11 jugadores aún quedan goles,
+    // se reparten en una segunda pasada hasta que todos sean anotados
+    // RAZÓN: garantiza que los golesEsperados siempre se cumplan completamente
     while (golesRestantes1 > 0) {
-        int idx = rand() % 11;
-        convocadosEq1[idx].stats.goles++;
-        golesRestantes1--;
+        for (int i = 0; i < 11 && golesRestantes1 > 0; ++i) {
+            if (ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
+                convocadosEq1[i].stats.goles++;
+                golesRestantes1--;
+            }
+        }
     }
     while (golesRestantes2 > 0) {
-        int idx = rand() % 11;
-        convocadosEq2[idx].stats.goles++;
-        golesRestantes2--;
+        for (int i = 0; i < 11 && golesRestantes2 > 0; ++i) {
+            if (ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
+                convocadosEq2[i].stats.goles++;
+                golesRestantes2--;
+            }
+        }
     }
 
     golesEq1 = 0;

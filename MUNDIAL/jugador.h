@@ -48,6 +48,7 @@ public:
                                      int rojasPartido, int faltasPartido, int minutosPartido);
 
     Jugador& operator+=(const Jugador& otro);
+    Jugador& operator=(const Jugador& otro);
     friend std::ostream& operator<<(std::ostream& os, const Jugador& j);
 };
 

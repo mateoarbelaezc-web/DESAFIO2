@@ -16,6 +16,8 @@ private:
 public:
     Grupo(char letra);
     ~Grupo();
+    Grupo(const Grupo& otro);
+    Grupo& operator=(const Grupo& otro);
 
     void asignarEquipos(Equipo* e1, Equipo* e2, Equipo* e3, Equipo* e4);
     void setEquipo(int idx, Equipo* eq);

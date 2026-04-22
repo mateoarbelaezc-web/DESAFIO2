@@ -46,8 +46,8 @@ public:
     Partido(Equipo* eq1, Equipo* eq2, const std::string& fecha,
             const std::string& hora, const std::string& sede);
     ~Partido();
-    Partido(const Partido&) = delete;
-    Partido& operator=(const Partido&) = delete;
+    Partido(const Partido& otro);
+    Partido& operator=(const Partido& otro);
 
     void simular(bool esEliminatoria = false);
     void actualizarHistoricos();

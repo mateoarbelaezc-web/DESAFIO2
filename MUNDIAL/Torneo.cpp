@@ -47,6 +47,50 @@ Torneo::~Torneo() {
     for (int i = 0; i < NUM_GRUPOS; ++i)
         delete grupos[i];
 }
+// Constructor de copia de Torneo
+// RAZÓN: copia profunda de los grupos
+//        los equipos se copian por valor porque son el arreglo principal
+Torneo::Torneo(const Torneo& otro) : numEquipos(otro.numEquipos),
+    countR16(otro.countR16), countR8(otro.countR8), countR4(otro.countR4) {
+    for (int i = 0; i < numEquipos; ++i)
+        equipos[i] = otro.equipos[i];
+    for (int i = 0; i < NUM_GRUPOS; ++i)
+        grupos[i] = new Grupo(*otro.grupos[i]);
+    for (int i = 0; i < BOMBOS; ++i)
+        for (int j = 0; j < EQUIPOS_POR_BOMBO; ++j)
+            bombos[i][j] = otro.bombos[i][j];
+    for (int i = 0; i < countR16; ++i)
+        participantesR16[i] = otro.participantesR16[i];
+    for (int i = 0; i < countR8; ++i)
+        participantesR8[i] = otro.participantesR8[i];
+    for (int i = 0; i < countR4; ++i)
+        participantesR4[i] = otro.participantesR4[i];
+}
+
+// Operador de asignación de Torneo
+Torneo& Torneo::operator=(const Torneo& otro) {
+    if (this == &otro) return *this;
+    for (int i = 0; i < NUM_GRUPOS; ++i)
+        delete grupos[i];
+    numEquipos = otro.numEquipos;
+    countR16 = otro.countR16;
+    countR8 = otro.countR8;
+    countR4 = otro.countR4;
+    for (int i = 0; i < numEquipos; ++i)
+        equipos[i] = otro.equipos[i];
+    for (int i = 0; i < NUM_GRUPOS; ++i)
+        grupos[i] = new Grupo(*otro.grupos[i]);
+    for (int i = 0; i < BOMBOS; ++i)
+        for (int j = 0; j < EQUIPOS_POR_BOMBO; ++j)
+            bombos[i][j] = otro.bombos[i][j];
+    for (int i = 0; i < countR16; ++i)
+        participantesR16[i] = otro.participantesR16[i];
+    for (int i = 0; i < countR8; ++i)
+        participantesR8[i] = otro.participantesR8[i];
+    for (int i = 0; i < countR4; ++i)
+        participantesR4[i] = otro.participantesR4[i];
+    return *this;
+}
 
 // ----------------------------------------------------------------------
 // Ordenamiento auxiliar
@@ -287,7 +331,6 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
     // Para cada grupo asignar sus 3 jornadas
     for (int g = 0; g < NUM_GRUPOS; ++g) {
         std::string fechas[3];
-        int diasAsignados = 0;
 
         // Los partidos de cada jornada involucran los 4 equipos del grupo
         // Jornada 1: equipo0 vs equipo1, equipo2 vs equipo3
@@ -621,6 +664,17 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     Equipo* ronda32[32];
     int numRonda32;
     generarEnfrentamientosR16(primeros, pCount, segundos, sCount, terceros, tCount, ronda32, numRonda32);
+
+    // Imprimir las 12 tablas de clasificación
+    std::cout << "\n=== TABLAS DE CLASIFICACION - FASE DE GRUPOS ===\n";
+    for (int g = 0; g < NUM_GRUPOS; ++g)
+        grupos[g]->imprimirTabla();
+
+    // Imprimir emparejamientos R16 antes de simularlos
+    std::cout << "\n=== PARTIDOS CONFIGURADOS PARA DIECISEISAVOS (sin simular) ===\n";
+    for (int i = 0; i < numRonda32; i += 2)
+        std::cout << "  " << ronda32[i]->getPais()
+                  << " vs " << ronda32[i+1]->getPais() << "\n";
 
     std::cout << "\n=== DIECISEISAVOS DE FINAL ===\n";
     Equipo* ronda16[16];

@@ -61,6 +61,8 @@ private:
 public:
     Torneo();
     ~Torneo();
+    Torneo(const Torneo& otro);
+    Torneo& operator=(const Torneo& otro);
 
     void cargarEquipos(const std::string& archivo);
     void conformarBombos();

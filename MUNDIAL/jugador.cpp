@@ -17,6 +17,20 @@ Jugador::Jugador(const Jugador& otro)
     faltas(otro.faltas) {}
 
 Jugador::~Jugador() {}
+Jugador& Jugador::operator=(const Jugador& otro) {
+    if (this == &otro) return *this;
+    nombre = otro.nombre;
+    apellido = otro.apellido;
+    numeroCamiseta = otro.numeroCamiseta;
+    partidosJugados = otro.partidosJugados;
+    goles = otro.goles;
+    minutosTotales = otro.minutosTotales;
+    asistencias = otro.asistencias;
+    tarjetasAmarillas = otro.tarjetasAmarillas;
+    tarjetasRojas = otro.tarjetasRojas;
+    faltas = otro.faltas;
+    return *this;
+}
 
 std::string Jugador::getNombre() const { return nombre; }
 std::string Jugador::getApellido() const { return apellido; }

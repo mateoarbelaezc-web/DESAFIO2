@@ -1,11 +1,21 @@
 #include "Torneo.h"
 #include <fstream>
-#include <sstream>
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-#include <cstring>
 
+// Extrae el siguiente campo delimitado por ';' desde pos en linea
+// Avanza pos al inicio del siguiente campo
+static std::string extraerCampo(const std::string& linea, int& pos) {
+    std::string campo;
+    int n = static_cast<int>(linea.size());
+    while (pos < n && linea[pos] != ';' && linea[pos] != '\r' && linea[pos] != '\n') {
+        campo += linea[pos];
+        pos++;
+    }
+    if (pos < n && linea[pos] == ';') pos++; // saltar el ';'
+    return campo;
+}
 // AGREGAR al inicio de Torneo.cpp, antes del constructor
 // RAZÓN: sumarDias se necesita en simularFaseGrupos para calcular fechas
 static std::string sumarDias(const std::string& fecha, int dias) {
@@ -203,20 +213,19 @@ void Torneo::cargarEquipos(const std::string& archivo) {
     std::getline(file, linea);
     int idx = 0;
     while (std::getline(file, linea) && idx < NUM_EQUIPOS) {
-        std::stringstream ss(linea);
-        std::string token;
         int ranking, gf, gc, pg, pe, pp;
         std::string pais, dt, fed, conf;
-        std::getline(ss, token, ';'); ranking = std::atoi(token.c_str());
-        std::getline(ss, pais, ';');
-        std::getline(ss, dt, ';');
-        std::getline(ss, fed, ';');
-        std::getline(ss, conf, ';');
-        std::getline(ss, token, ';'); gf = std::atoi(token.c_str());
-        std::getline(ss, token, ';'); gc = std::atoi(token.c_str());
-        std::getline(ss, token, ';'); pg = std::atoi(token.c_str());
-        std::getline(ss, token, ';'); pe = std::atoi(token.c_str());
-        std::getline(ss, token, ';'); pp = std::atoi(token.c_str());
+        int pos = 0;
+        ranking = std::atoi(extraerCampo(linea, pos).c_str());
+        pais    = extraerCampo(linea, pos);
+        dt      = extraerCampo(linea, pos);
+        fed     = extraerCampo(linea, pos);
+        conf    = extraerCampo(linea, pos);
+        gf      = std::atoi(extraerCampo(linea, pos).c_str());
+        gc      = std::atoi(extraerCampo(linea, pos).c_str());
+        pg      = std::atoi(extraerCampo(linea, pos).c_str());
+        pe      = std::atoi(extraerCampo(linea, pos).c_str());
+        pp      = std::atoi(extraerCampo(linea, pos).c_str());
 
         Equipo tmp(ranking, pais, dt, fed, conf, gf, gc, pg, pe, pp);
         for (int j = 0; j < JUGADORES_POR_EQUIPO; ++j) {

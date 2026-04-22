@@ -2,7 +2,6 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 
 std::string sumarDias(const std::string& fecha, int dias) {
     int dia, mes, anio;

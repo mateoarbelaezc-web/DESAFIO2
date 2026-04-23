@@ -531,15 +531,20 @@ void Torneo::generarEnfrentamientosR16(Clasificado primeros[], int pCount,
         Equipo* cabeza = primeros[i].equipo;
         Equipo* tercero = terceros[terceroIdx].equipo;
         if (mismoGrupo(cabeza, tercero)) {
+            bool encontrado = false;
             for (int j = 0; j < tCount; ++j) {
                 if (!mismoGrupo(cabeza, terceros[j].equipo)) {
                     tercero = terceros[j].equipo;
                     Clasificado temp = terceros[terceroIdx];
                     terceros[terceroIdx] = terceros[j];
                     terceros[j] = temp;
+                    encontrado = true;
                     break;
                 }
             }
+            if (!encontrado)
+                std::cerr << "Advertencia: no se encontro tercero valido para "
+                          << cabeza->getPais() << "\n";
         }
         enfrentamientos[eCount++] = cabeza;
         enfrentamientos[eCount++] = tercero;
@@ -560,15 +565,20 @@ void Torneo::generarEnfrentamientosR16(Clasificado primeros[], int pCount,
         Equipo* cabeza = primeros[cabezaIdx++].equipo;
         Equipo* segundo = peoresSegundos[i].equipo;
         if (mismoGrupo(cabeza, segundo)) {
+            bool encontrado = false;
             for (int j = i+1; j < sCount; ++j) {
                 if (!mismoGrupo(cabeza, peoresSegundos[j].equipo)) {
                     segundo = peoresSegundos[j].equipo;
                     Clasificado temp = peoresSegundos[i];
                     peoresSegundos[i] = peoresSegundos[j];
                     peoresSegundos[j] = temp;
+                    encontrado = true;
                     break;
                 }
             }
+            if (!encontrado)
+                std::cerr << "Advertencia: no se encontro segundo valido para "
+                          << cabeza->getPais() << "\n";
         }
         enfrentamientos[eCount++] = cabeza;
         enfrentamientos[eCount++] = segundo;
@@ -579,12 +589,17 @@ void Torneo::generarEnfrentamientosR16(Clasificado primeros[], int pCount,
         Equipo* seg1 = peoresSegundos[4 + i].equipo;
         Equipo* seg2 = peoresSegundos[4 + i + 1].equipo;
         if (mismoGrupo(seg1, seg2)) {
+            bool encontrado = false;
             for (int j = 4 + i + 2; j < sCount; ++j) {
                 if (!mismoGrupo(seg1, peoresSegundos[j].equipo)) {
                     seg2 = peoresSegundos[j].equipo;
+                    encontrado = true;
                     break;
                 }
             }
+            if (!encontrado)
+                std::cerr << "Advertencia: no se encontro segundo valido para "
+                          << seg1->getPais() << "\n";
         }
         enfrentamientos[eCount++] = seg1;
         enfrentamientos[eCount++] = seg2;

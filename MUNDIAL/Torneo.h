@@ -58,6 +58,19 @@ private:
     int countR8;
     int countR4;
 
+    // Resultados finales
+    Equipo* campeon;
+    Equipo* subcampeon;
+    Equipo* terceroLugar;
+    Equipo* cuartoLugar;
+
+    // Flags de estado para el menú
+    bool equiposCargados;
+    bool bombosConfigurados;
+    bool gruposSorteados;
+    bool faseGruposSimulada;
+    bool eliminatoriasSimuladas;
+
 public:
     Torneo();
     ~Torneo();
@@ -77,6 +90,15 @@ public:
     static size_t calcularMemoriaActual();
     void mostrarMetricas(const std::string& etapa, size_t bytesLocales = 0,
                          const std::string& componentesExternos = "");
+    // Getters de estado
+    bool isEquiposCargados() const { return equiposCargados; }
+    bool isBombosConfigurados() const { return bombosConfigurados; }
+    bool isGruposSorteados() const { return gruposSorteados; }
+    bool isFaseGruposSimulada() const { return faseGruposSimulada; }
+    bool isEliminatoriasSimuladas() const { return eliminatoriasSimuladas; }
+
+    // Estadísticas finales
+    void generarEstadisticasFinales();
 };
 
 #endif

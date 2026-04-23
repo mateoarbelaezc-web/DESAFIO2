@@ -36,7 +36,13 @@ static std::string sumarDias(const std::string& fecha, int dias) {
 // ----------------------------------------------------------------------
 // Constructor y destructor
 // ----------------------------------------------------------------------
-Torneo::Torneo() : numEquipos(0) {
+Torneo::Torneo() : numEquipos(0),
+    campeon(nullptr), subcampeon(nullptr),
+    terceroLugar(nullptr), cuartoLugar(nullptr),
+    equiposCargados(false), bombosConfigurados(false),
+    gruposSorteados(false), faseGruposSimulada(false),
+    eliminatoriasSimuladas(false),
+    countR16(0), countR8(0), countR4(0) {
     for (int i = 0; i < NUM_GRUPOS; ++i)
         grupos[i] = new Grupo('A' + i);
     for (int i = 0; i < BOMBOS; ++i)
@@ -235,6 +241,7 @@ void Torneo::sortearGrupos() {
         std::cout << "Sorteo valido encontrado en " << intentos
                   << " intento(s)\n";
         imprimirGrupos();
+        gruposSorteados = true;
         mostrarMetricas("Sorteo de grupos",
                         sizeof(int)*NUM_GRUPOS + sizeof(Equipo*)*NUM_EQUIPOS,
                         "rand() de <cstdlib>");      // otros[]
@@ -293,6 +300,7 @@ void Torneo::cargarEquipos(const std::string& archivo) {
         idx++;
     }
     numEquipos = idx;
+    equiposCargados = true;
     mostrarMetricas("Carga de equipos",
                     sizeof(int)*6 + sizeof(std::string)*4,
                     "ifstream de <fstream>");
@@ -309,6 +317,10 @@ void Torneo::conformarBombos() {
             if (bombos[b][i]) std::cout << bombos[b][i]->getPais() << " ";
         std::cout << std::endl;
     }
+    bombosConfigurados = true;
+    mostrarMetricas("Conformar bombos",
+                    sizeof(Equipo*) * NUM_EQUIPOS,
+                    "rand() de <cstdlib>");
 }
 
 // ----------------------------------------------------------------------
@@ -410,10 +422,11 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
         std::cout << "\n--- Grupo " << char('A'+g) << " ---\n";
         grupos[g]->imprimirPartidos();
         grupos[g]->imprimirTabla();
-        mostrarMetricas("Fase de grupos",
-                        sizeof(int)*19 + sizeof(int)*NUM_EQUIPOS + sizeof(int)*NUM_GRUPOS*EQUIPOS_POR_GRUPO,
-                        "rand() de <cstdlib>, pow() de <cmath>"); // idxEquipoEnTorneo
     }
+    faseGruposSimulada = true;
+    mostrarMetricas("Fase de grupos",
+                    sizeof(int)*19 + sizeof(int)*NUM_EQUIPOS + sizeof(int)*NUM_GRUPOS*EQUIPOS_POR_GRUPO,
+                    "rand() de <cstdlib>, pow() de <cmath>"); // idxEquipoEnTorneo
 }
 
 // ----------------------------------------------------------------------
@@ -775,8 +788,10 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     tercerPuesto->actualizarHistoricos();
     tercerPuesto->imprimirResultado();
     tercerPuesto->imprimirGoleadores();
-    Equipo* tercero = (tercerPuesto->getGolesEq1() > tercerPuesto->getGolesEq2()) ? tercerPuesto->getEquipo1() : tercerPuesto->getEquipo2();
-    Equipo* cuarto = (tercero == tercerPuesto->getEquipo1()) ? tercerPuesto->getEquipo2() : tercerPuesto->getEquipo1();
+    Equipo* terceroLocal = (tercerPuesto->getGolesEq1() > tercerPuesto->getGolesEq2()) ?
+                               tercerPuesto->getEquipo1() : tercerPuesto->getEquipo2();
+    Equipo* cuartoLocal = (terceroLocal == tercerPuesto->getEquipo1()) ?
+                              tercerPuesto->getEquipo2() : tercerPuesto->getEquipo1();
     delete tercerPuesto;
 
     // Final
@@ -786,9 +801,16 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     final->actualizarHistoricos();
     final->imprimirResultado();
     final->imprimirGoleadores();
-    Equipo* campeon = (final->getGolesEq1() > final->getGolesEq2()) ? final->getEquipo1() : final->getEquipo2();
-    Equipo* subcampeon = (campeon == final->getEquipo1()) ? final->getEquipo2() : final->getEquipo1();
+    Equipo* campeonLocal = (final->getGolesEq1() > final->getGolesEq2()) ?
+                               final->getEquipo1() : final->getEquipo2();
+    Equipo* subcampeonLocal = (campeonLocal == final->getEquipo1()) ?
+                                  final->getEquipo2() : final->getEquipo1();
     delete final;
+    campeon      = campeonLocal;
+    subcampeon   = subcampeonLocal;
+    terceroLugar = terceroLocal;
+    cuartoLugar  = cuartoLocal;
+    eliminatoriasSimuladas = true;
 
     std::cout << "\n=== CONFEDERACIONES POR ETAPA ===\n";
 
@@ -801,7 +823,7 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     std::cout << "R4:\n";
     contarConfederaciones(participantesR4, countR4);
 
-    calcularEstadisticasFinales(campeon, subcampeon, tercero, cuarto);
+    eliminatoriasSimuladas = true;
     mostrarMetricas("Eliminatorias completas",
                     sizeof(Clasificado)*12*3 + sizeof(Equipo*)*32 + sizeof(Equipo*)*16 +
                         sizeof(Equipo*)*8 + sizeof(Equipo*)*4,
@@ -843,6 +865,14 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
         total += sizeof(int) * 4; // numEquipos, countR16, countR8, countR4
 
         return total;
+    }
+
+    void Torneo::generarEstadisticasFinales() {
+        if (!eliminatoriasSimuladas) {
+            std::cout << "Debe simular las eliminatorias primero.\n";
+            return;
+        }
+        calcularEstadisticasFinales(campeon, subcampeon, terceroLugar, cuartoLugar);
     }
 
     void Torneo::mostrarMetricas(const std::string& etapa, size_t bytesLocales,

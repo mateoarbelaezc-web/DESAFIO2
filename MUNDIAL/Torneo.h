@@ -84,18 +84,19 @@ public:
     void simularEliminatorias(const std::string& fechaEliminatorias);
     void imprimirGrupos();
 
-    // Métricas
     static long long totalIteraciones;
     static void incIteraciones(long long n = 1);
     static size_t calcularMemoriaActual();
     void mostrarMetricas(const std::string& etapa, size_t bytesLocales = 0,
                          const std::string& componentesExternos = "");
-    // Getters de estado
     bool isEquiposCargados() const { return equiposCargados; }
     bool isBombosConfigurados() const { return bombosConfigurados; }
     bool isGruposSorteados() const { return gruposSorteados; }
     bool isFaseGruposSimulada() const { return faseGruposSimulada; }
     bool isEliminatoriasSimuladas() const { return eliminatoriasSimuladas; }
+
+    void guardarEstadisticasJugadores(const std::string& archivo);
+    void cargarEstadisticasJugadores(const std::string& archivo);
 
     // Estadísticas finales
     void generarEstadisticasFinales();

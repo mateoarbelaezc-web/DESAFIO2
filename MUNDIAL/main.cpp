@@ -11,7 +11,7 @@ int main() {
     Torneo mundial;
     int opcion = 0;
 
-    while (opcion != 7) {
+    while (opcion != 9) {
         std::cout << "\n===== MENU UdeAWorldCup =====\n";
         std::cout << "1. Cargar equipos\n";
         std::cout << "2. Conformar bombos\n";
@@ -19,7 +19,9 @@ int main() {
         std::cout << "4. Simular fase de grupos\n";
         std::cout << "5. Simular eliminatorias\n";
         std::cout << "6. Generar estadisticas finales\n";
-        std::cout << "7. Salir\n";
+        std::cout << "7. Guardar estadisticas de jugadores\n";
+        std::cout << "8. Cargar estadisticas de jugadores\n";
+        std::cout << "9. Salir\n";
         std::cout << "Opcion: ";
 
         if (!(std::cin >> opcion)) {
@@ -65,6 +67,18 @@ int main() {
                 mundial.generarEstadisticasFinales();
             break;
         case 7:
+            if (!mundial.isEquiposCargados())
+                std::cout << "Primero debe cargar los equipos (opcion 1).\n";
+            else
+                mundial.guardarEstadisticasJugadores("estadisticas_jugadores.txt");
+            break;
+        case 8:
+            if (!mundial.isEquiposCargados())
+                std::cout << "Primero debe cargar los equipos (opcion 1).\n";
+            else
+                mundial.cargarEstadisticasJugadores("estadisticas_jugadores.txt");
+            break;
+        case 9:
             std::cout << "Saliendo...\n";
             break;
         default:

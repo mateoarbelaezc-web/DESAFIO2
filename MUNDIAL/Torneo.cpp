@@ -867,6 +867,92 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
         return total;
     }
 
+    // Formato del archivo:
+    // Cada línea representa un jugador con el formato:
+    // paisEquipo;numeroCamiseta;goles;partidosJugados;minutos;asistencias;amarillas;rojas;faltas
+    // RAZÓN: formato de texto plano separado por ';' consistente con el CSV de entrada,
+    //        sin librerías externas, fácil de leer y verificar manualmente
+    void Torneo::guardarEstadisticasJugadores(const std::string& archivo) {
+        std::ofstream file(archivo.c_str());
+        file << "pais;numeroCamiseta;goles;partidosJugados;minutos;asistencias;amarillas;rojas;faltas\n";
+        if (!file.is_open()) {
+            std::cerr << "Error al abrir " << archivo << " para escritura\n";
+            return;
+        }
+        for (int i = 0; i < numEquipos; ++i) {
+            incIteraciones(1);
+            for (int j = 0; j < JUGADORES_POR_EQUIPO; ++j) {
+                incIteraciones(1);
+                Jugador& jug = equipos[i].getJugador(j);
+                file << equipos[i].getPais() << ";"
+                     << jug.getNumero()      << ";"
+                     << jug.getGoles()       << ";"
+                     << jug.getPartidosJugados() << ";"
+                     << jug.getMinutos()     << ";"
+                     << jug.getAsistencias() << ";"
+                     << jug.getAmarillas()   << ";"
+                     << jug.getRojas()       << ";"
+                     << jug.getFaltas()      << "\n";
+            }
+        }
+        file.close();
+        std::cout << "Estadisticas de jugadores guardadas en " << archivo << "\n";
+        mostrarMetricas("Guardar estadisticas jugadores",
+                        sizeof(std::string),
+                        "ofstream de <fstream>");
+    }
+
+    void Torneo::cargarEstadisticasJugadores(const std::string& archivo) {
+        std::ifstream file(archivo.c_str());
+        std::string encabezado;
+        std::getline(file, encabezado); // saltar línea de encabezado
+        if (!file.is_open()) {
+            std::cerr << "Error al abrir " << archivo << " para lectura\n";
+            return;
+        }
+        std::string linea;
+        while (std::getline(file, linea)) {
+            incIteraciones(1);
+            int pos = 0;
+            std::string pais    = extraerCampo(linea, pos);
+            int numero          = stringAInt(extraerCampo(linea, pos));
+            int goles           = stringAInt(extraerCampo(linea, pos));
+            int partidos        = stringAInt(extraerCampo(linea, pos));
+            int minutos         = stringAInt(extraerCampo(linea, pos));
+            int asistencias     = stringAInt(extraerCampo(linea, pos));
+            int amarillas       = stringAInt(extraerCampo(linea, pos));
+            int rojas           = stringAInt(extraerCampo(linea, pos));
+            int faltas          = stringAInt(extraerCampo(linea, pos));
+
+            // Buscar el equipo y jugador correspondiente
+            for (int i = 0; i < numEquipos; ++i) {
+                incIteraciones(1);
+                if (equipos[i].getPais() == pais) {
+                    for (int j = 0; j < JUGADORES_POR_EQUIPO; ++j) {
+                        incIteraciones(1);
+                        if (equipos[i].getJugador(j).getNumero() == numero) {
+                            Jugador& jug = equipos[i].getJugador(j);
+                            jug.setGoles(goles);
+                            jug.setPartidosJugados(partidos);
+                            jug.setMinutos(minutos);
+                            jug.setAsistencias(asistencias);
+                            jug.setAmarillas(amarillas);
+                            jug.setRojas(rojas);
+                            jug.setFaltas(faltas);
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        file.close();
+        std::cout << "Estadisticas de jugadores cargadas desde " << archivo << "\n";
+        mostrarMetricas("Cargar estadisticas jugadores",
+                        sizeof(std::string),
+                        "ifstream de <fstream>");
+    }
+
     void Torneo::generarEstadisticasFinales() {
         if (!eliminatoriasSimuladas) {
             std::cout << "Debe simular las eliminatorias primero.\n";

@@ -31,8 +31,7 @@ private:
     // Métodos privados
     void ordenarEquiposPorRanking(Equipo* lista[], int n);
     void distribuirBombos();
-    // ANTES: bool respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount);
-    // AHORA: bool respetaConfederaciones(Equipo* equipo, Grupo* grupo);
+
     bool respetaConfederaciones(Equipo* equipo, Grupo* grupo);
     void recolectarClasificados(Clasificado primeros[], int& pCount,
                                 Clasificado segundos[], int& sCount,

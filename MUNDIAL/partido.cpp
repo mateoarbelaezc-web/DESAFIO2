@@ -74,13 +74,7 @@ void Partido::simularEventosJugador(Convocado& conv, int& golesRestantesEquipo, 
         }
     }
     conv.stats.faltas = faltas;
-    // CAMBIO: distribución de goles
-    // ANTES: intentaba anotar con 4% pero si nadie anotaba el gol quedaba pendiente
-    // AHORA: por cada gol pendiente se repite hasta que algún jugador lo anote
-    // RAZÓN: el profesor indicó que los goles esperados siempre deben ocurrir,
-    //        el 4% define QUIÉN anota, no SI se anota
-    // NOTA: este jugador solo puede anotar si le toca en la iteración actual,
-    //       garantizando que el gol siempre se distribuye entre los convocados
+
     if (golesRestantesEquipo > 0 && ocurreConProbabilidad(PROB_GOL_POR_JUGADOR)) {
         conv.stats.goles++;
         golesRestantesEquipo--;
@@ -109,10 +103,7 @@ Partido::~Partido() {
     delete[] convocadosEq1;
     delete[] convocadosEq2;
 }
-// Constructor de copia de Partido
-// RAZÓN: copia profunda de los arreglos dinámicos de convocados
-//        los punteros a equipo1 y equipo2 se comparten (no se copian)
-//        porque los equipos son propiedad del Torneo, no del Partido
+
 Partido::Partido(const Partido& otro)
     : fecha(otro.fecha), hora(otro.hora), sede(otro.sede),
     equipo1(otro.equipo1), equipo2(otro.equipo2),

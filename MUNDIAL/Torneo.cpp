@@ -6,8 +6,7 @@
 #include "Metricas.h"
 
 
-// Extrae el siguiente campo delimitado por ';' desde pos en linea
-// Avanza pos al inicio del siguiente campo
+
 static std::string extraerCampo(const std::string& linea, int& pos) {
     std::string campo;
     int n = static_cast<int>(linea.size());
@@ -33,9 +32,7 @@ static std::string sumarDias(const std::string& fecha, int dias) {
     }
     return intAString(dia, 2) + "/" + intAString(mes, 2) + "/" + intAString(anio, 4);
 }
-// ----------------------------------------------------------------------
-// Constructor y destructor
-// ----------------------------------------------------------------------
+
 Torneo::Torneo() : numEquipos(0),
     campeon(nullptr), subcampeon(nullptr),
     terceroLugar(nullptr), cuartoLugar(nullptr),
@@ -54,9 +51,7 @@ Torneo::~Torneo() {
     for (int i = 0; i < NUM_GRUPOS; ++i)
         delete grupos[i];
 }
-// Constructor de copia de Torneo
-// RAZÓN: copia profunda de los grupos
-//        los equipos se copian por valor porque son el arreglo principal
+
 Torneo::Torneo(const Torneo& otro) : numEquipos(otro.numEquipos),
     countR16(otro.countR16), countR8(otro.countR8), countR4(otro.countR4) {
     for (int i = 0; i < numEquipos; ++i)
@@ -99,9 +94,8 @@ Torneo& Torneo::operator=(const Torneo& otro) {
     return *this;
 }
 
-// ----------------------------------------------------------------------
+
 // Ordenamiento auxiliar
-// ----------------------------------------------------------------------
 void Torneo::ordenarEquiposPorRanking(Equipo* lista[], int n) {
     for (int i = 0; i < n-1; ++i)
         for (int j = 0; j < n-i-1; ++j) {
@@ -114,9 +108,7 @@ void Torneo::ordenarEquiposPorRanking(Equipo* lista[], int n) {
         }
 }
 
-// ----------------------------------------------------------------------
 // Distribución de bombos (sorteo inicial)
-// ----------------------------------------------------------------------
 void Torneo::distribuirBombos() {
     Equipo* anfitrion = nullptr;
     Equipo* otros[NUM_EQUIPOS];
@@ -143,13 +135,7 @@ void Torneo::distribuirBombos() {
             bombos[bombo][i] = otros[idx++];
 }
 
-// ----------------------------------------------------------------------
 // Restricción de confederaciones para el sorteo
-// ----------------------------------------------------------------------
-// ANTES: bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo, int& uefaCount)
-// AHORA: bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo)
-// RAZÓN: La función ahora cuenta internamente los equipos UEFA del grupo
-//        en lugar de recibir ese valor como parámetro externo
 bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo) {
     std::string conf = equipo->getConfederacion();
     int countConf = 0;
@@ -164,14 +150,8 @@ bool Torneo::respetaConfederaciones(Equipo* equipo, Grupo* grupo) {
         }
     }
     return true;
-}
-// ----------------------------------------------------------------------
+} 
 // Sorteo de grupos
-// ----------------------------------------------------------------------
-// RAZÓN: El algoritmo anterior causaba dos problemas:
-//        1. Equipos duplicados en distintos grupos
-//        2. Violaciones de restricciones de confederación
-//        El nuevo algoritmo garantiza grupos válidos siempre
 void Torneo::sortearGrupos() {
     bool sorteoValido = false;
     int intentos = 0;
@@ -242,11 +222,11 @@ void Torneo::sortearGrupos() {
                   << " intento(s)\n";
         imprimirGrupos();
         gruposSorteados = true;
+        }
         mostrarMetricas("Sorteo de grupos",
                         sizeof(int)*NUM_GRUPOS + sizeof(Equipo*)*NUM_EQUIPOS,
                         "rand() de <cstdlib>");      // otros[]
     }
-}
 void Torneo::imprimirGrupos() {
     std::cout << "\n=== GRUPOS SORTEADOS ===\n";
     for (int g = 0; g < NUM_GRUPOS; ++g) {
@@ -259,9 +239,7 @@ void Torneo::imprimirGrupos() {
     }
 }
 
-// ----------------------------------------------------------------------
 // Carga de equipos desde CSV
-// ----------------------------------------------------------------------
 void Torneo::cargarEquipos(const std::string& archivo) {
     std::ifstream file(archivo.c_str());
     if (!file.is_open()) {
@@ -323,32 +301,14 @@ void Torneo::conformarBombos() {
                     "rand() de <cstdlib>");
 }
 
-// ----------------------------------------------------------------------
+
 // Fase de grupos
-// ----------------------------------------------------------------------
-// CAMBIO: simularFaseGrupos ahora calendariza los partidos antes de simularlos
-// RAZÓN: El enunciado exige que ningún día tenga más de 4 partidos y que
-//        ningún equipo juegue más de 1 partido en un lapso de 3 días
 void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
-
-    // Cada grupo necesita 3 fechas distintas (jornada 1, 2 y 3)
-    // Total: 12 grupos x 3 jornadas = 36 slots de fecha a asignar
-    // Con máximo 4 partidos por día necesitamos al menos 9 días distintos
-    // pero como cada partido ocupa 2 slots (2 partidos por jornada por grupo)
-    // necesitamos distribuir 36 asignaciones de fecha
-
-    // Arreglo que cuenta cuántos partidos hay por día
-    // Índice 0 = día 1 (fechaInicio), índice 1 = día 2, etc.
     int partidosPorDia[19] = {0};
 
-    // Para cada equipo, guardar el índice del último día que jugó
-    // -99 significa que aún no ha jugado
     int ultimoDiaJugado[NUM_EQUIPOS];
     for (int i = 0; i < NUM_EQUIPOS; ++i) ultimoDiaJugado[i] = -99;
 
-    // Precalcular índice de cada equipo una sola vez
-    // Índice i contiene la posición de grupos[g]->getEquipo(i) en equipos[]
-    // Evita búsqueda lineal repetida dentro del triple loop
     int idxEquipoEnTorneo[NUM_GRUPOS][EQUIPOS_POR_GRUPO];
     for (int g = 0; g < NUM_GRUPOS; ++g) {
         for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i) {
@@ -364,30 +324,19 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
         }
     }
 
-    // Para cada grupo asignar sus 3 jornadas
     for (int g = 0; g < NUM_GRUPOS; ++g) {
         incIteraciones(1);
         std::string fechas[3];
 
-        // Los partidos de cada jornada involucran los 4 equipos del grupo
-        // Jornada 1: equipo0 vs equipo1, equipo2 vs equipo3
-        // Jornada 2: equipo0 vs equipo2, equipo1 vs equipo3
-        // Jornada 3: equipo0 vs equipo3, equipo1 vs equipo2
         int equiposJornada[3][4] = {
-            {0, 1, 2, 3},  // jornada 1: todos juegan
-            {0, 2, 1, 3},  // jornada 2: todos juegan
-            {0, 3, 1, 2}   // jornada 3: todos juegan
+            {0, 1, 2, 3},
+            {0, 2, 1, 3},
+            {0, 3, 1, 2}
         };
 
         for (int jornada = 0; jornada < 3; ++jornada) {
-            // Buscar un día válido para esta jornada
             for (int dia = 0; dia < 19; ++dia) {
-                // Verificar límite de 4 partidos por día
-                // cada jornada agrega 2 partidos
                 if (partidosPorDia[dia] + 2 > 4) continue;
-
-                // Verificar que ningún equipo de este grupo haya jugado
-                // en los últimos 3 días
                 bool diaValido = true;
                 for (int e = 0; e < 4; ++e) {
                     int idx = idxEquipoEnTorneo[g][equiposJornada[jornada][e]];
@@ -429,9 +378,7 @@ void Torneo::simularFaseGrupos(const std::string& fechaInicio) {
                     "rand() de <cstdlib>, pow() de <cmath>"); // idxEquipoEnTorneo
 }
 
-// ----------------------------------------------------------------------
 // Recolección de clasificados
-// ----------------------------------------------------------------------
 void Torneo::recolectarClasificados(Clasificado primeros[], int& pCount,
                                     Clasificado segundos[], int& sCount,
                                     Clasificado terceros[], int& tCount) {
@@ -442,8 +389,6 @@ void Torneo::recolectarClasificados(Clasificado primeros[], int& pCount,
         grupos[g]->obtenerClasificados(p1, p2, p3, pts1, dif1, gf1,
                                        pts2, dif2, gf2, pts3, dif3, gf3);
 
-        // CAMBIO: inicialización con llaves {} no funciona con class
-        // RAZÓN: class no soporta aggregate initialization como struct
         Clasificado c1;
         c1.equipo = p1; c1.puntos = pts1; c1.diferenciaGoles = dif1;
         c1.golesFavor = gf1; c1.grupo = char('A'+g); c1.posicion = 1;
@@ -530,9 +475,7 @@ void Torneo::contarConfederaciones(Equipo** lista, int n) {
               << " (" << conteo[maxIdx] << " equipos)\n";
 }
 
-// ----------------------------------------------------------------------
 // Generación de enfrentamientos de R16
-// ----------------------------------------------------------------------
 void Torneo::generarEnfrentamientosR16(Clasificado primeros[], int pCount,
                                        Clasificado segundos[], int sCount,
                                        Clasificado terceros[], int tCount,
@@ -619,9 +562,7 @@ void Torneo::generarEnfrentamientosR16(Clasificado primeros[], int pCount,
     }
 }
 
-// ----------------------------------------------------------------------
 // Simulación de una ronda eliminatoria genérica
-// ----------------------------------------------------------------------
 void Torneo::simularRonda(Equipo** participantes, int numParticipantes,
                           const std::string& fecha, bool esEliminatoria,
                           Equipo** ganadores, int& numGanadores) {
@@ -647,9 +588,7 @@ void Torneo::simularRonda(Equipo** participantes, int numParticipantes,
     delete[] partidos;
 }
 
-// ----------------------------------------------------------------------
 // Estadísticas finales (con manejo de punteros nulos)
-// ----------------------------------------------------------------------
 void Torneo::calcularEstadisticasFinales(Equipo* campeon, Equipo* subcampeon,
                                          Equipo* tercero, Equipo* cuarto) {
     std::cout << "\n=== ESTADÍSTICAS FINALES ===\n";
@@ -712,9 +651,7 @@ void Torneo::calcularEstadisticasFinales(Equipo* campeon, Equipo* subcampeon,
               << " (" << maxGolesEquipo->getGolesAFavor() << " goles)\n";
 }
 
-// ----------------------------------------------------------------------
 // Simulación completa de eliminatorias (con tercer puesto)
-// ----------------------------------------------------------------------
 void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     Clasificado primeros[12], segundos[12], terceros[12];
     int pCount, sCount, tCount;
@@ -829,9 +766,7 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
                         sizeof(Equipo*)*8 + sizeof(Equipo*)*4,
                     "rand() de <cstdlib>, pow() de <cmath>");
 }
-    // ----------------------------------------------------------------------
     // Métricas de eficiencia
-    // ----------------------------------------------------------------------
     long long Torneo::totalIteraciones = 0;
 
     void Torneo::incIteraciones(long long n) {
@@ -868,10 +803,6 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
     }
 
     // Formato del archivo:
-    // Cada línea representa un jugador con el formato:
-    // paisEquipo;numeroCamiseta;goles;partidosJugados;minutos;asistencias;amarillas;rojas;faltas
-    // RAZÓN: formato de texto plano separado por ';' consistente con el CSV de entrada,
-    //        sin librerías externas, fácil de leer y verificar manualmente
     void Torneo::guardarEstadisticasJugadores(const std::string& archivo) {
         std::ofstream file(archivo.c_str());
         file << "pais;numeroCamiseta;goles;partidosJugados;minutos;asistencias;amarillas;rojas;faltas\n";
@@ -959,6 +890,10 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
             return;
         }
         calcularEstadisticasFinales(campeon, subcampeon, terceroLugar, cuartoLugar);
+        mostrarMetricas("Generar estadisticas finales",
+                        sizeof(Equipo*) * 3 +    // mejores[3]
+                            sizeof(Jugador*) * 3,    // punteros a mejores goleadores
+                        "");
     }
 
     void Torneo::mostrarMetricas(const std::string& etapa, size_t bytesLocales,

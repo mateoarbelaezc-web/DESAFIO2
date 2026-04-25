@@ -38,7 +38,6 @@ public:
     void simularEtapa(bool esEliminatoria = false);
     void actualizarHistoricos();
 
-    // Nueva versión con 12 parámetros (3 equipos + 9 estadísticas)
     void obtenerClasificados(Equipo*& primero, Equipo*& segundo, Equipo*& tercero,
                              int& pts1, int& dif1, int& gf1,
                              int& pts2, int& dif2, int& gf2,

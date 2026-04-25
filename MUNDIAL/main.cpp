@@ -27,7 +27,7 @@ int main() {
         if (!(std::cin >> opcion)) {
             std::cin.clear();
             std::cin.ignore(1000, '\n');
-            std::cout << "Entrada invalida, ingrese un numero del 1 al 7.\n";
+            std::cout << "Entrada invalida, ingrese un numero del 1 al 9.\n";
             opcion = 0;
             continue;
         }
@@ -82,7 +82,7 @@ int main() {
             std::cout << "Saliendo...\n";
             break;
         default:
-            std::cout << "Opcion invalida, ingrese un numero del 1 al 7.\n";
+            std::cout << "Opcion invalida, ingrese un numero del 1 al 9.\n";
         }
     }
     return 0;

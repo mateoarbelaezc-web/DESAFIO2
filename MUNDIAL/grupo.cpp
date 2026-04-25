@@ -12,10 +12,7 @@ Grupo::~Grupo() {
     for (int i = 0; i < PARTIDOS_POR_GRUPO; ++i)
         delete partidos[i];
 }
-// Constructor de copia de Grupo
-// RAZÓN: copia profunda de los partidos
-//        los punteros a equipos[] se comparten porque
-//        los equipos son propiedad del Torneo
+
 Grupo::Grupo(const Grupo& otro) : letra(otro.letra) {
     for (int i = 0; i < EQUIPOS_POR_GRUPO; ++i)
         equipos[i] = otro.equipos[i];
@@ -131,10 +128,7 @@ void Grupo::asignarEquipos(Equipo* e1, Equipo* e2, Equipo* e3, Equipo* e4) {
     equipos[0] = e1; equipos[1] = e2; equipos[2] = e3; equipos[3] = e4;
 }
 
-// CAMBIO: configurarPartidos ahora recibe las 3 fechas como parámetros
-// RAZÓN: La asignación de fechas debe hacerse desde Torneo porque necesita
-//        conocer todos los partidos de todos los grupos simultáneamente
-//        para respetar el límite de 4 partidos por día
+
 void Grupo::configurarPartidos(const std::string& f1,
                                const std::string& f2,
                                const std::string& f3) {

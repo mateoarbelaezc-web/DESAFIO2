@@ -36,6 +36,8 @@ public:
     int getRanking() const;
     std::string getPais() const;
     std::string getConfederacion() const;
+    std::string getDirTecnico() const;
+    std::string getFederacion() const;
     double getPromedioGolesAFavor() const;
     double getPromedioGolesEnContra() const;
     int getGolesAFavor() const;

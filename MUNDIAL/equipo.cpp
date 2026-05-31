@@ -116,3 +116,5 @@ std::ostream& operator<<(std::ostream& os, const Equipo& eq) {
     os << eq.pais << " (Ranking " << eq.ranking << ", " << eq.confederacion << ")";
     return os;
 }
+std::string Equipo::getDirTecnico() const { return directorTecnico; }
+std::string Equipo::getFederacion() const { return federacion; }

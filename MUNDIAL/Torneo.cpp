@@ -907,3 +907,39 @@ void Torneo::simularEliminatorias(const std::string& fechaEliminatorias) {
             std::cout << "Componentes externos: " << componentesExternos << "\n";
     }
 
+    void Torneo::guardarEquiposCSV(const std::string& archivo) {
+        std::ofstream file(archivo.c_str());
+        if (!file.is_open()) {
+            std::cerr << "Error al abrir " << archivo << " para escritura\n";
+            return;
+        }
+
+        // Encabezado igual al CSV original del profesor
+        file << "Selecciones clasificadas al Mundial de Futbol 2026;;;;;;;;;\n";
+        file << "Ranking FIFA (1 abril 2026);Pais;Director tecnico;"
+             << "Federacion de futbol;Confederacion;"
+             << "Goles a favor;Goles en contra;"
+             << "Partidos ganados;Partidos empatados;Partidos perdidos\n";
+
+        for (int i = 0; i < numEquipos; ++i) {
+            incIteraciones(1);
+            Equipo& eq = equipos[i];
+            file << eq.getRanking()          << ";"
+                 << eq.getPais()             << ";"
+                 << eq.getDirTecnico()       << ";"
+                 << eq.getFederacion()       << ";"
+                 << eq.getConfederacion()    << ";"
+                 << eq.getGolesAFavor()      << ";"
+                 << eq.getGolesEnContra()    << ";"
+                 << eq.getPartidosGanados()  << ";"
+                 << eq.getPartidosEmpatados()<< ";"
+                 << eq.getPartidosPerdidos() << "\n";
+        }
+
+        file.close();
+        std::cout << "Datos historicos de equipos guardados en " << archivo << "\n";
+        mostrarMetricas("Guardar equipos CSV",
+                        sizeof(std::string),
+                        "ofstream de <fstream>");
+    }
+

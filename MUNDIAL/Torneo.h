@@ -99,6 +99,7 @@ public:
 
     // Estadísticas finales
     void generarEstadisticasFinales();
+    void guardarEquiposCSV(const std::string& archivo);
 };
 
 #endif
